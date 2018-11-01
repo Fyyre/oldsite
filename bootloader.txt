@@ -1,0 +1,131 @@
+//Disable PatchGuard - the easy/lazy way.
+//for Vista SP2 & Windows 7 (X64)
+//
+//by Fyyre (thank you Roxaz for helping me to test)
+//http://fyyre.l2-fashion.de/
+//http://twitter.com/Fyyre
+
+last update: 19/03/2011
+
+This txt file provides a general overview/outline for bypassing signature validation of critical system files (ntoskrnl, mainly) during
+the Vista/Win 7 boot phase.  It is documentation of the steps taken from start to finish, to reach the desired goal of removing
+kernel patch protection "PatchGuard" without use of a driver.  We will call this the 'lazy/easy' way to kill PatchGuard.
+
+We cannot modify ntoskrnl without winload taking up issue...
+
+winload.exe is the Windows loader for Vista & Windows 7.  Along with this, he makes some verification of digital signatures and
+checking to make sure the files have not been modified.  If modification of ntoskrnl is detected, the result is winload *refusing*
+to boot Windows and launching a WinPE looking "Recovery Mode".
+
+PART I { additional }: new way for patch of winload.exe
+
+Function ImgpValidateImageHash - signature we locate: 8B C3 49 8B 5B 20 49 8B 73 28 49 8B 7B 30 4D 8B -- you may play with this one to make him smaller.  as for this
+patching, use of dUP2... size of not a concern.  First bytes replaced with xor eax, eax (STATUS_SUCCESS) .. all validations successful.
+
+PART I: disassembly and modification of winload.exe
+
+Starting from OslpMain, after loading the System registry hives(registry)... occurs a call to OslInitializeCodeIntegrity:
+
+.text:00000000004016C3                 call    OslpLoadSystemHive
+.text:00000000004016C3
+.text:00000000004016C8                 cmp     eax, ebx
+.text:00000000004016CA                 mov     edi, eax
+.text:00000000004016CC                 jl      loc_401A08
+.text:00000000004016CC
+.text:00000000004016D2                 mov     ecx, ebp
+.text:00000000004016D4                 call    OslInitializeCodeIntegrity <<-- =(
+
+
+.text:00000000004057E8 OslInitializeCodeIntegrity proc near
+
+original code -->>
+
+We will replace four bytes here:
+
+48 8B C4 53
+.text:00000000004057E8                 mov     rax, rsp
+.text:00000000004057EB                 push    rbx
+.text:00000000004057EC                 push    rbp
+
+
+with: 0B0h, 01h, 0C3h, 090h ... which produce:
+
+mov al, 1
+ret
+nop
+
+Save as winload.exe as osloader.exe (or whatever..) & correct PE checksum (LordPE and/or CFF_Explorer will do).  Copy osloader.exe to \Windows\System32
+
+PART II - new BCD entry:
+
+bcdedit /copy {current} /d "PatchGuard Disabled"
+
+"The entry was successfully copied to {01234567-89ab-cdef-00ff-fff000ffffff}" <<-- GUID of new entry.  each is different!
+
+bcdedit /timeout 10 <<-- number of seconds to show boot menu.
+
+bcdedit /set {01234567-89ab-cdef-00ff-fff000ffffff} nointegritychecks 1 <<-- no validation of winload
+
+bcdedit /set {01234567-89ab-cdef-00ff-fff000ffffff} recoveryenabled 0 <<-- optional... i dislike this feature, therefore disable.
+
+bcdedit /set {01234567-89ab-cdef-00ff-fff000ffffff} path \Windows\system32\osloader.exe
+
+bcdedit /set {01234567-89ab-cdef-00ff-fff000ffffff} kernel ntkrnlmp.exe (name of modified ntos... =))
+
+Part III: Skip Initialization of PatchGuard - - (driver not required)
+
+As for this .txt, and PatchGuard... we are concerned with one function KiInitializePatchGuard(*1) which is called by KiFilterFiberContext.
+KiInitializePatchGuard is a very large function located in the INIT section of ntoskrnl, you can easily locate him via two calls from
+KiFilterFiberContext, by examination xrefs to exported dword InitSafeBootMode, searching for db 20h dup(90h) + db 044h ... or 48 81 EC 58 0F 00 00 to
+name a few...
+
+PatchGuard does not initialize if we boot into safe mode.  So to disable we just patch one conditional jxx
+
+KiInitializePatchGuard:
+
+original code -->>
+INIT:000000014055D359 sub     rsp, 0F58h
+INIT:000000014055D360 xor     edi, edi
+INIT:000000014055D362 cmp     cs:InitSafeBootMode, edi
+INIT:000000014055D368 jz      short loc_14055D371
+INIT:000000014055D368
+INIT:000000014055D36A mov     al, 1
+INIT:000000014055D36C jmp     loc_1405600D9
+
+modified code -->>
+INIT:000000014055D359                 sub     rsp, 0F58h
+INIT:000000014055D360                 xor     edi, edi
+INIT:000000014055D362                 cmp     cs:InitSafeBootMode, edi
+INIT:000000014055D368                 nop
+INIT:000000014055D369                 nop
+INIT:000000014055D36A                 mov     al, 1
+INIT:000000014055D36C                 jmp     loc_1405600D9 <<-- to end of KiInitializePatchGuard
+
+and back to KiFilterFiberContext... and important detail:
+
+The first jxx in KiInitializePatchGuard must not be taken & al == 1.  When we return to KiFilterFiberContext, the jxx must be taken,
+and EBX must not be xor'd ... (unless enjoy BSOD).
+
+INIT:0000000140567110 loc_140567110:
+INIT:0000000140567110                 test    al, al
+INIT:0000000140567112                 jnz     short loc_140567116
+INIT:0000000140567112
+INIT:0000000140567114
+INIT:0000000140567114 loc_140567114:
+INIT:0000000140567114                 xor     ebx, ebx <<-- bad
+INIT:0000000140567114
+
+Anyways... nop the first jxx in KiInitializePatchGuard... save modified ntoskrnl.exe with a different name (i.e. ntkrnlmp.exe) ... fix checksum (PE header).
+Then copy your modified kernel to \Windows\system32 -- with bcdedit -->>
+
+bcdedit /set {guid-of-new-entry} kernel ntkrnlmp.exe
+
+When you reboot the system, loading your modified kernel should be a success... He will load without PatchGuard initializing, which will allow you to
+once again play in kernel mode without receiving BSOD as result...
+
+This could be worked into mbr bootkit code as well... this is beyond the scope of our intention.
+
+-Fyyre
+
+references:
+*1: Bypassing PatchGuard on Windows x64, by Skywing 12/1/2005

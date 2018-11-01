@@ -1,0 +1,97 @@
+﻿/*
+Fyyre
+http://fyyre.l2-fashion.de/
+http://twitter.com/Fyyre/
+*/
+
+This txt file provides a general overview/outline for the reader to disable "Kernel Patch Protection" ( Patch Guard ) .. 
+on Windows 8 Developer Preview.  Consider it an update of my preview txt file, on Windows 7 and PatchGuard.
+
+// Win 8 RTM: // 03/19/2013, minor notes
+
+Since I write that when time is free, I would update this for Windows 8 -- here it is .. yes is late, I do not 
+run Windows 8 .. =)
+
+Looking in the INIT section, it appear nothing change since RC0.  Meaning we still can use byte signature of:
+8B FA FA 33 C0, which next instruction is mov edi, edx near start of PgInitialize inside ntoskrnl INIT section.  Subtract
+0x2B from this agan yields function start .. which our mov al, 1 overwrites mov rax, rsp  ^^
+
+..by end of week I will again make easy use 'no PG/DS' patch ~;)
+
+
+// Win 8 RC0:	// 06/09/2012, small update
+
+INIT:00000001406C5A04 PgInitialize 
+8B FA FA 33 C0 // binary signature
+address of first byte in signature - 0x2B == PgInitialize function start.
+replace with 0xb0 0x01 0xc3 (add nops, if needed).
+
+didn't verify this, but at first blush i see no real difference here.
+
+INIT:00000001406744C0
+INIT:00000001406744C0 ; <"PREFETCHWLIST", "\ObjectTypes\">
+INIT:00000001406744C0
+INIT:00000001406744C0 KiInitializePatchGuard proc near        ; CODE XREF: KiFilterFiberContext+1E2
+INIT:00000001406744C0                                         ; KiFilterFiberContext+29E
+
+or using the signature: "\x48\x8B\xC4\x44\x89\x48\x20\x44\x89\x40\x18\x89\x50\x10\x89\x48" or "\x48\x81\xEC\xD0\x17\x00\x00" - 0x1C we again find within
+the .INIT section of ntoskrnl the start of PG initialization function.
+
+Brief look over it, we can tell that it is a good bit different than Windows 7 -- the details, save for rainy days.  to disable,
+again we simply make it return true, by overwrite starting bytes with "\xB0\x01\xC3"
+
+Moving on, as I not fully fix SeInitializeCodeIntegrity, yet ;) .. I did little change to SeValidateImageHeader...
+searching for "\x74\x27\x48\x8B\x84\x24\x80\x00" changing 0x74 to 0x84.  Also, we fix the return in this function
+
+mov eax, 0C0000428h <<-- I replace 0x28 0x04 with 0x00 0x00 -- mov eax, STATUS_SUCCESS;
+
+Save changes, be certain to fix pe checksum on ntoskrnl.exe -- and rename to what you wish..
+
+Next, winload.exe -- again.
+
+ImgpValidateImageHash... find him using debugging symbols, and change start of function to return STATUS_SUCCESS -->> 0x33 0xC0 0xC3 --
+again, save file and update pe checksum.
+
+I rename winload.exe -->> osloader.exe and ntoskrnl.exe -->> ntkrnlmp.exe
+
+Next... bcd entry.. create .bat file now add...
+
+ECHO.
+ECHO Creating BCD Entry...
+ECHO.
+
+set ENTRY_GUID={46595952-454E-4F50-4747-554944FEEEEE}
+bcdedit -create %ENTRY_GUID% -d "PatchGuard Disabled v2" -application OSLOADER
+bcdedit -set %ENTRY_GUID% device partition=%SYSTEMDRIVE%
+bcdedit -set %ENTRY_GUID% osdevice partition=%SYSTEMDRIVE%
+bcdedit -set %ENTRY_GUID% systemroot \Windows
+bcdedit -set %ENTRY_GUID% path \Windows\system32\osloader.exe
+bcdedit -set %ENTRY_GUID% kernel ntkrnlmp.exe
+bcdedit -set %ENTRY_GUID% recoveryenabled 0	; optional, i just dislike the recovery ...
+bcdedit -set %ENTRY_GUID% nx OptIn
+bcdedit -set %ENTRY_GUID% nointegritychecks 1
+bcdedit -set %ENTRY_GUID% inherit {bootloadersettings}
+bcdedit -set %ENTRY_GUID% testsigning 1
+bcdedit -displayorder %ENTRY_GUID% -addlast
+bcdedit -timeout 10
+
+ECHO.
+ECHO Setting PEAUTH service to manual... (avoid BSOD at login screen)
+ECHO.
+sc config peauth start= demand
+
+ECHO.
+ECHO Step One Complete!
+
+also -- now, there is some registry settings that may be modified...
+
+\Registry\MACHINE\System\CurrentControlSet\Control\CI
+
+AllowTestCode REG_DWORD <<-- 0 or 1
+IntegrityLevelPolicy REG_DWORD <<-- not sure :)
+
+Driver requires test signing, atm -- but PG is now gone (again).
+
+Have fun =)
+
+-Fyyre

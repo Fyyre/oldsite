@@ -1,0 +1,32 @@
+/*
+Fyyre
+http://fyyre.ru
+http://twitter.com/Fyyre
+*/
+
+
+an annoying method of blocking user from access of choice applications, without creation of entry in secpol.msc -> Software Restriction Policies -> Additional Rules:
+
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Group Policy Objects\{8A986132-33EA-450c-86D3-FE816D246067}Machine\Software\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{{2C03544A-10D0-4800-A1A5-76A4053AB65C}}]
+"LastModified"=hex(b):c1,32,4e,b7,f9,f4,d2,01
+"Description"=""
+"SaferFlags"=dword:00000000
+"ItemData"="sysmon.exe"
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Group Policy Objects\{8A986132-33EA-450c-86D3-FE816D246067}Machine\Software\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{B3BD8A63-DD2A-4370-99BE-E87DAEFBAD22}]
+"LastModified"=hex(b):c1,32,4e,b7,f9,f4,d2,01
+"Description"=""
+"SaferFlags"=dword:00000000
+"ItemData"="procmon.exe"
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Group Policy Objects\{8A986132-33EA-450c-86D3-FE816D246067}Machine\Software\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths\{489406E6-FF4C-4b65-81AA-0B712E200CFB}]
+"LastModified"=hex(b):c1,32,4e,b7,f9,f4,d2,01
+"Description"=""
+"SaferFlags"=dword:00000000
+"ItemData"="procexp.exe"
+
+...for the entries, i make up GUID at end.. \0\Paths\{GUID...}
+
+fyyre

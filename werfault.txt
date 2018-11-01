@@ -1,0 +1,20 @@
+/*
+Fyyre
+http://fyyre.ru
+http://twitter.com/Fyyre
+*/
+
+Entry to registry, gpedit.msc (gui of registry).  Crashing application spawn Werfault.exe on new Windows.  Application
+always make outbound TCP connection to IP block with MSFT owner.
+
+This is norm; OS reporting many detail to maker.
+
+What of old application crash, OK = terminate, cancel = debug.  I like this.
+
+We may restore it, very simple:
+
+secpol.msc -> Software Restriction Policies -> Additional Rules
+insert of Path rule: disable werfault.exe
+
+
+What of old application crash, OK = terminate, cancel = debug?  Again he return ))
