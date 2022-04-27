@@ -7,7 +7,7 @@ Contents of my web site.  Site no longer maintained.
 + secpol_nogui.txt -  Create policies execution policies invisible to secpol.msc - only visible via regedit.
 + junos_persist_after_access.txt - very simple/effective rootkit for Juniper MX & SRX series
 + werfault.txt - werfault - i hate you! (or how to disable this junk)
-+ dllmain.cpp - Metasploit Pro Crack, beyond trivial
++ dllmain.cpp - Metasploit Pro Crack, beyond trivial. This no longer works, Metasploit pro is garbage anyway =)
 + ct2p3_sdk.rar - Lineage II Gracia Final (ct2.3), full SDK.
 
 
