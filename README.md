@@ -1,4 +1,4 @@
-# mysite .. aka; fyyre.ru
+# mysite .. aka; fyyre.ru and fyyre.l2-fasion.de .. both offline for years now.
 
 Contents of my web site.  Site no longer maintained.
 
