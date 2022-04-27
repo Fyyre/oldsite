@@ -4,7 +4,7 @@ Contents of my web site.  Site no longer maintained.
 
 # Explaination of content:
 
-+ secpol_nogui.txt - Security Policy w/o GUI
++ secpol_nogui.txt -  Create policies execution policies invisible to secpol.msc - only visible via regedit.
 + junos_persist_after_access.txt - very simple/effective rootkit for Juniper MX & SRX series
 + werfault.txt - werfault - i hate you! (or how to disable this junk)
 + dllmain.cpp - Metasploit Pro Crack, beyond trivial
