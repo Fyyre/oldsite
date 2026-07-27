@@ -1,0 +1,132 @@
+/*
+Fyyre
+http://fyyre.ru/
+http://twitter.com/Fyyre/
+*/
+
+2017/05/07
+
+This text file explain PatchGuard & DSE disable of ntoskrnl 9200 - 10.0.16xxx ...
+
+For lessons of history:
+
+http://fyyre.ru/vault/bootloader.txt
+http://fyyre.ru/vault/bootloader_v2.txt
+
+Driver Signing.. start with... this one very easy ))
+
+SepInitializeCode, this function pass value to g_CiOptions in CI.dll
+PAGE:00000001405197F2 ; 9:   SepOptionsValue = 6;                          // default = 6 (enabled)
+PAGE:00000001405197F2                 mov     r8d, ebx        ; Size
+PAGE:00000001405197F5                 xor     edx, edx        ; Val
+PAGE:00000001405197F7                 mov     edi, 6
+.. skip, the blah ...
+PAGE:00000001405198A7 ; 33:   return CiInitialize(SepOptionsValue, v2, &SeCiCallbacks, &SeCiPrivateApis);	// SepOptionsValue, pass zero for argument
+PAGE:00000001405198A7
+PAGE:00000001405198A7 loc_1405198A7:
+PAGE:00000001405198A7
+PAGE:00000001405198A7                 lea     r9, SeCiPrivateApis
+PAGE:00000001405198AE                 mov     rdx, rbx
+PAGE:00000001405198B1                 lea     r8, SeCiCallbacks
+PAGE:00000001405198B8                 mov     ecx, edi        ; perfect, we need pass zero.  both instruction use two bytes
+PAGE:00000001405198B8                                         ; change to xor ecx, ecx 0x31 0xC9
+PAGE:00000001405198BA                 mov     rbx, [rsp+30h]  ; all required, signing is no more ))
+PAGE:00000001405198BF                 add     rsp, 20h
+PAGE:00000001405198C3                 pop     rdi
+PAGE:00000001405198C4                 jmp     cs:__imp_CiInitialize
+
+SeValidateImageData, always .PAGE section.
+
+Avoid BSOD... patch SeValidateImageData:
+mov eax, 0C0000428h to mov eax, 00000000h // return STATUS_SUCCESS;
+
+CcInitializeBcbProfiler:
+
+One of two main PatchGuard initialization functions
+always inside section .INIT
+how to fix? return 1;
+
+0x40 0x55 0x53 -> 0xB0 0x01 0xC3
+
+KiFilterFiberContext calls PgInitialize2.  However, simply retn of start .. not work.
+How find all this shit starting? Answer: InitSafeBootMode (( xfers ))
+
+Win10 ... is addition of new:
+mov al, ds:0FFFFF780000002D4h // older Windows builds not reference location in memory.
+use location PgInitialize junk (KeInitAmd64SpecificState, ExpLicenseWatchInitWorker)
+
+KeInitAmd64SpecificState very fun!  Opcode sequence is unique in all ntoskrnl.exe
+
+0x0B 0xD0 0x8B 0xCA 0xF7 0xD9
+...which mean:
+
+or edx, eax
+mov ecx, edx
+neg ecx
+
+...nice :)
+
+modify function start... KeInitAmd64SpecificState return of STATUS_SUCCESS;
+
+Take care of most case, not all case:
+
+KiFilterFiberContext.  Much writing about her.
+Before UPGDSED Project never before common sense kill.
+
+Pointer to KiFilterFiberContext/argument passed via
+
+structure _KPRCB
+{
+	UCHAR NotCare[0x44];
+	UINT64 HalReserved[8];	// here ..
+};
+
+Here look, 15063.
+
+// disasm credit -> EP_X0FF
+int ExpLicenseWatchInitWorker()
+{
+  __int64 v0; // rax@1
+  __int64 v1; // rcx@1
+  __int64 v2; // r11@1
+  char v3; // r10@1
+  unsigned __int64 v4; // r9@1
+  int result; // eax@1
+
+	v0 = KiProcessorBlock;
+	v1 = *(_QWORD *)(KiProcessorBlock + 120); //take KiFilterFiberContext parameter address from Pcr->Prcb
+	*(_QWORD *)(KiProcessorBlock + 120) = 0; //zero it to fool research
+
+	v2 = *(_QWORD *)(v0 + 112); //take KiFilterFiberContext routine address from Pcr->Prcb
+	*(_QWORD *)(v0 + 112) = 0; //zero it to fool research
+
+	v3 = (InitSafeBootMode != 0) | (MEMORY[0xFFFFF780000002D4] >> 1); //should we skip PG context init?
+
+
+	v4 = __rdtsc() >> 3;
+	result = 1374389535 * v4;
+	if ( (unsigned int)v4 % 0x64 > 3 ) //skip PG init in 96% cases
+	v3 |= 1u;
+
+
+	if ( !v3 )
+	{
+	result = guard_dispatch_icall(v1, (unsigned int)v4 / 0x64); //if not skip PG then callKiFilterFiberContext(Param)
+	if ( result != 1 )
+		KeBugCheckEx(0x9Au, 0x42424242ui64, 0xC000026Aui64, 0i64, 0i64);
+	}
+	
+	return result;
+}
+
+ExpLicenseWatchInitWorker solve?  return STATUS_SUCCESS;
+
+KiFilterFiberContext solve:  // disable/kill credit -> Fyyre
+return 1;
+
+mov al, 1
+retn
+
+https://github.com/hfiref0x/UPGDSED/blob/master/src/patterns.h
+same information in .txt .. 'read code version' ))
+
