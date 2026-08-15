@@ -1,0 +1,950 @@
+/*
+Fyyre
+
+http://fyyre.ru
+https://twitter.com/Fyyre
+*/
+
+
+[*]: all build notes
+
+First writing: 3/2008
+Last writing:  11/2009
+
+The .txt I make for you, is all of my little .txt file combined regarding 'buildzone'
+I apologize is very messy, I make messy notes always.
+
+You spoke of Themida.  It is 100% pain in ass, I know...
+When I found myself unable to unpack new versions or version
+using RISC opcodes, in the past....
+I would locate the code where real Intel opcode I need modify
+and the corresponding file offset... then use hex editor to modify the
+Themida 'VM opcodes' until I manage to change the unpack version
+that run in memory.  Buildzone mostly modification of conditional
+jmp instructions, so.. with much patience and examination this
+was one way to 'work around' Themida.
+
+If Themida CRC check file for modifications, this will not work
+also.. it take much time, patience and very boring.
+
+[*]
+[*]: Start of old buildzone notes
+[*]
+
+
+this notes cover c4 and interlude... is very old
+
+840BB4
+//
+
+Can locate Engine.?getScout@FWorldBuilder@@AAEXXZ by searching for:
+
+Notes: C1 E1 0F 81 E9 01 80 09 00
+
+SHL ECX, 0F
+SUB ECX, 98001
+
+[the same on C4 and Interlude engine.dll]
+
+00157410
+0042B011
+ F4356:	56	3A
+<<-- Port 2134
+
+2806F9:	90	0F
+2806FA:	90	85
+2806FB:	90	BB
+2806FC:	90	00
+2806FD:	90	00
+2806FE:	90	00
+<<-- MOV EDX, DWORD PTR DS:core.?GIsEditor@@3HA
+<<-- CMP DWORD PTR DS:[EDX], 0
+<<-- Insert 6 NOP at addr 007143F2
+
+2C9E91:	90	64
+2C9E92:	90	89
+2C9E93:	90	25
+2C9E94:	90	00
+2C9E95:	90	00
+2C9E96:	90	00
+2C9E97:	90	00
+<<-- Insert 7 NOP, the original was  : MOV DWORD PTR FS:[0], ESP
+<<-- 00764C30
+
+00764C41    64:8925 00000000     MOV DWORD PTR FS:[0], ESP
+
+
+2CAC71:	90	64
+2CAC72:	90	89
+2CAC73:	90	25
+2CAC74:	90	00
+2CAC75:	90	00
+2CAC76:	90	00
+2CAC77:	90	00
+<<-- Locate second reference to: References in engine: engine.?ActorNonZeroExtentLineCheck@FOctreeNode@@QAEXPAVFCollisionOctree@@PBVFPlane@@@Z
+<<--Find routine start, again seven NOP: 83 EC 4C MOV DWORD PTR FS:[0], ESP
+<<-- addr: 00765841
+
+<<-- Search text strings for "FFighter", or to make it easier, Go to addr: 008B09C0
+<<-- We change FFighter to MFighter... at addr: 00A56334... the purpose of this is unclear...
+
+68 4C 63 A5 00
+
+68 E6 62 A5 00
+
+0A520ED <- LineageWarrior.FDarkElf
+
+68 64 21 A5 00 <-- FFighter
+
+68 EC 20 A5 00
+
+68 4C 63 A5 00
+00A562DC                          46                               F
+
+
+<<-- addr: 008B09ED & 008B0A13 are the Push "FFighter" we need to change to "MFighter"
+<<--LineageWarrior.MFighter <<-- addr: 00A521A0
+<<-- MFighter addr: 0A56334
+
+410125:	EB	74
+<<-- Find references to ?getScout@FWorldBuilder, go to the second result.
+<<-- change JE to JMP at addr: 008B2052
+
+410161:	90	0F
+410162:	E9	84
+<<-- Search Binary String: 66 3D 5C 00 74 11 66 3D 2F 00 74 0B 66 3D 3A 00
+<<-- Go to addr: 008B208C - change the JE to JMP.
+
+41049C:	90	0F
+41049D:	90	85
+41049E:	90	07
+41049F:	90	03
+4104A0:	90	00
+4104A1:	90	00
+<<-- Go to addr: 008B2515 and set six NOP.
+
+411282:	EB	74
+<<-- addr 008B315F change JE to JMP
+
+4112A2:	EB	74
+<<-- addr 008B3183 change JE to JMP
+
+4112DB:	EB	74
+<<-- addr 008B31BF change JE to JMP
+
+41138C:	EB	74
+<<-- addr: 008B3280 change JE to JMP
+
+41141E:	EB	74
+<<-- addr 008B3318 change JE to JMP
+
+41221C:	90	0F
+41221D:	90	85
+41221E:	90	37
+41221F:	90	01
+412220:	90	00
+412221:	90	00
+<<-- %S_path.txt Search binary string for cellsize.
+Place seven NOP again on the JNZ at addr: 008B4138
+
+[*]
+[*]: BuildZone_Water.txt (dunno why I name it this)
+[*]
+
+l2UnrealWWindowsViewportWindow
+
+k...
+
+Owner=StaticMeshActor 20_22.StaticMeshActor1202 Name=O_Wood-Log-S End.
+
+edited 20_22.unr, removed that stupid grass010.
+
+buildzone loops, bp at trouble spot, jmp it... restore original JE.
+
+continue...
+
+result ?
+
+DynamicRecompile:
+
+0034B214
+
+000F51E0
+... 0013E8C8
+
+06.06.08
+
+Fyyre =)
+
+OBJ LOAD FILE=..\Textures\FDarkElf.utx PACKAGE=FDarkElf
+
+//=============================================================================
+// %s.
+class %s extends %s;
+#exec MESH IMPORT MESH=%s ANIVFILE=MODELS\%s_a.3d DATAFILE=MODELS\%s_d.3d
+ MLOD=0
+#exec MESH ORIGIN MESH=%s X=%f Y=%f Z=%f YAW=%f ROLL=%f PITCH=%f
+#exec MESH SEQUENCE MESH=%s SEQ=%-9s STARTFRAME=%d NUMFRAMES=%d
+ RATE=%f
+None
+ GROUP=%s
+#exec TEXTURE IMPORT NAME=%s FILE=%s.PCX GROUP=%s
+#exec OBJ LOAD FILE=%s.utx PACKAGE=%s
+#exec MESHMAP SETTEXTURE MESHMAP=%s NUM=%d TEXTURE=%s
+#exec MESHMAP SCALE MESHMAP=%s X=%f Y=%f Z=%f
+#exec MESH NOTIFY MESH=%s SEQ=%-9s TIME=%f FUNCTION=%s
+
+//=============================================================================
+// %s.
+class %s extends %s;
+#exec MESH IMPORT MESH=%s ANIVFILE=MODELS\%s_a.3d DATAFILE=MODELS\%s_d.3d
+#exec MESH LODPARAMS MESH=%s HYSTERESIS=%f STRENGTH=%f MINVERTS=%f MORPH=%f ZDISP=%f
+#exec MESH ORIGIN MESH=%s X=%f Y=%f Z=%f YAW=%f ROLL=%f PITCH=%f
+#exec MESH SEQUENCE MESH=%s SEQ=%-9s STARTFRAME=%d NUMFRAMES=%d
+ RATE=%f
+None
+ GROUP=%s
+#exec TEXTURE IMPORT NAME=%s FILE=%s.PCX GROUP=%s
+#exec OBJ LOAD FILE=%s.utx PACKAGE=%s
+#exec MESHMAP SETTEXTURE MESHMAP=%s NUM=%d TEXTURE=%s
+#exec MESHMAP SCALE MESHMAP=%s X=%f Y=%f Z=%f
+#exec MESH NOTIFY MESH=%s SEQ=%-9s TIME=%f FUNCTION=%s
+
+0011F7AC (cell table offset ?)
+
+..crash 'fixed' changed je at 000E0647 .. this may create subpar quality geo however...
+
+editactor name=StaticMeshActor962
+editdefault class=StaticMeshActor962
+History: FSweptBoxCollisionCheck::Check <- FSweptBoxCollisionCheck::Check
+<- UStaticMesh::LineCheck <- Owner=StaticMeshActor 20_22.StaticMeshActor962
+Name=grass010 End[x=16312 y=144342 z=-3006]
+Start[16312.000000 ,144350.000000, -3006.406250] Extent[9.000000 ,9.000000, 23.000000] <- FOctreeNode::ActorNonZeroExtentLineCheck <- 
+
+ Owner=StaticMeshActor 20_22.StaticMeshActor962 Name=grass010
+StaticMesh'field_deco_S.grass_flower.grass010'
+Texture'Engine.S_Actor'
+StaticMeshInstance'20_22.StaticMeshInstance11024'
+UStaticMesh::LineCheck
+000F51F0 <<-- ?GIsServer@@3HA
+000F51EC <<-- ?GIsClient@@3HA
+000F6360 <<-- GL2ShowCMViewer
+000F6248 <<-- GIsSEK
+?GL2IsUIEditor@@3HA <<-- 000F6340
+?GL2DebugLog@@3PAVFOutputDevice@@A <<--0034B164
+?GL2ShowUIScriptDebugInfo@@3HA <<-- 000F6370
+?GL2UseBoneSimul@@3HA <<-- 000E09DC
+?GIsUseXMLUI@@3HA << -- 000F6260
+?GIsBenchmarking@@3HA << -- 000F5220
+?GIsNative@@3HA <<-- 000E0970
+?GIsScriptable@@3HA <<-- 000F51D8
+?GIsSEK@@3HA <<-- 000F6248
+?GL2ShowEnableTrackerBox@@3HA <<-- 000E0A00
+
+0012D71D         57 47 C5 00 00 00 00 00 00 00 00 00 00 00 00 B4  WGÅ............´
+0012D72D         DF 12 00 00 20 64 11 00 00 00 00 5E 87 46 C5 40  ß.. d....^‡FÅ@
+0012D73D         C0 1B 48 15 68 33 48 3B FD 28 BD 00 00 00 00 40  ÀHh3H;ý(½....@
+0012D74D         C0 1B 48 15 68 33 48 5E 87 46 C5 00 00 00 00 00  ÀHh3H^‡FÅ.....
+0012D75D         00 00 00 00 00 00 00 CC 8D 87 00 00 00 00 00 00  .......Ì‡......
+0012D76D         00 00 00 00 00 00 00 CC 8D 87 00 00 00 80 3F 00  .......Ì‡...€?.
+0012D77D         00 00 00 00 00 00 00 00 00 00 00 00 00 00 00     ...............
+
+000F62D8
+
+000F630C
+
+0034B004
+0034B018
+
+000F51E4 // ucc
+000F51DC
+
+000EEA04
+00F62D8 = GL2TextCapture
+l2.exe dsetup.dll.DirectXSetupGetVersion is imported via ordinal, and requires us fixing it by hand.
+
+nwindow.dll has several imports by ordinal (oleaut32.dll, ole32.dll if memory serves me correct).
+
+follow procedure for correct core.dll dump/running and patch nwindow's ordinal imports by hand.
+
+Visual C++ Runtime error is caused by incorrect Flags on the respective Sections.  Be certain that the new .dll section flags match that of the
+old.
+
+24_22... buildzone from:
+
+143296, 163552, -2560
+
+Thx tontor for ur answer.
+Are u sure of that? I mean,.. i asked this question in order of that:
+
+Torune Post:
+http://www.postpacific.com/forum/viewtopic.php?t=1890
+4. If you enter the catacomb and find out your breath bar is actived, change the ground block count to 65536, it will solve the problem.
+
+Vaskes Post:
+http://www.postpacific.com/forum/viewtopic.php?t=2135
+gndarray[m] := -(-colormap[k,i] + 256)*form1.Spinedit1.value + 65536;
+wtrarray[m] := -(-colormap[k,i] + 256)*form1.Spinedit1.value + 65536-32;
+
+I got maps, where the Z is TOO LOW (like -10000) and no breath bar appears. 
+
+//from postpacific, back when we were figure out
+//structure of _conv.dat files
+current developments on geodata -- digital:
+
+ok first 3 bits of file
+10 19 = 16_25 file description (map ref)
+80 00 10 00 next 4 always the same
+^ ^
+128 16 translates to these values
+
+in dec 128,0,16,0 (looks like a starting point)
+
+d8 72 03 00 19 ff 00 00 57 f2 00 00 00 00 is the next hieght
+next info is for the WHOLE map for that level
+
+//end postpacific
+
+///SHOWBORDERLINE <-- yellow line, important.
+
+///SHOWSECTORS
+
+///SHOWPARTICLES <<-- ??
+
+///SHOWACTORS <<-- ??
+
+///SHOWCORONAS <<-- ??
+
+///SHOWSTATICMESHES <<-- ??
+
+///SHOWTERRAIN <<-- ??
+
+///SHOWSKY <<-- ??
+
+///SHOWTERRITORY <<-- ??
+
+///Limit User=MFighter1 <<-- set rendering limit to the float value exported by Core.dll
+
+///RMODE [0-9]
+1. Wireframe mode | 2.
+5.. Normal 10.. okay look?
+
+
+[*]
+[*]: BuildZoneCT1.5.txt
+[*]
+
+//Fyyre
+//buildzone notes
+//
+//
+
+loading a class -->>
+0068FC23              |.  33FF                   XOR EDI, EDI
+0068FC25              |.  897D FC                MOV DWORD PTR SS:[EBP-4], EDI
+0068FC28              |.  9B                     WAIT
+0068FC29              |.  897E 10                MOV DWORD PTR DS:[ESI+10], EDI
+0068FC2C              |.  57                     PUSH EDI
+0068FC2D              |.  68 6C249A00            PUSH MFighter
+0068FC32              |.  6A FF                  PUSH -1
+0068FC34              |.  A1 BCE3EC01            MOV EAX, [?PrivateStaticClass@UClass@@0V1@A]
+0068FC39              |.  50                     PUSH EAX
+0068FC3A              |.  FF15 C4E3EC01          CALL [?StaticFindObject@UObject@@SAPAV1@PAVUClass@@PAV1@PBGH@Z]
+0068FC40              |.  83C4 10                ADD ESP, 10
+0068FC43              |.  3BC7                   CMP EAX, EDI
+0068FC45              |.  75 18                  JNZ SHORT Engine.0068FC5F
+
+0068FC47              |.  57                     PUSH EDI
+0068FC48              |.  6A 01                  PUSH 1
+0068FC4A              |.  57                     PUSH EDI
+0068FC4B              |.  68 6C019A00            PUSH LineageWarrior.MFighter
+0068FC50              |.  57                     PUSH EDI
+0068FC51              |.  68 4856D000            PUSH Engine.?PrivateStaticClass@APawn@@0VUClass@@A
+0068FC56              |.  FF15 C0E8EC01          CALL [?StaticLoadClass@UObject@@SAPAVUClass@@PAV2@PAV1@PBG2KPAVUPackageMap@@@Z]
+0068FC5C              |.  83C4 18                ADD ESP, 18
+0068FC5F              |>  B8 6C249A00            MOV EAX, "MFighter"
+0068FC64              |.  83C9 FF                OR ECX, FFFFFFFF
+0068FC67              |.  E8 54B7F3FF            CALL Engine.005CB3C0
+
+class FWorldBuilder
+{
+private:
+	void getScout();
+public:
+	void ComboPostProcessing(class UViewport *);
+	FWorldBuilder();
+	INT buildWorldStructure(class ULevel *, TCHAR *, class UViewport *, INT, INT);
+	class FWorldBuilder & operator=(class FWorldBuilder const &);
+	INT testWorldStructure(class ULevel *, TCHAR *, class UViewport *, INT, INT);
+};
+
+get cell data -->>
+00692119         D9 05 E4 37 9F 00       FLD DWORD PTR DS:[9F37E4]                                       ; f15000.00
+
+examine -->>
+0069262B         85C0                TEST EAX, EAX
+0069262D         74 27               JE SHORT Engine.00692656
+0069262F         8B15 F8E3EC01       MOV EDX, DWORD PTR DS:[<&core.?GWarn@@3PAVFFeedbackContext@@A>] ; Core.?GWarn@@3PAVFFeedbackContext@@A
+00692635         8B02                MOV EAX, DWORD PTR DS:[EDX]
+00692637         8B08                MOV ECX, DWORD PTR DS:[EAX]
+00692639         68 80E99E00         PUSH Engine.009EE980                                            ; UNICODE "Setting Initial Points"
+0069263E         68 00080000         PUSH 800
+00692643         8B53 24             MOV EDX, DWORD PTR DS:[EBX+24]
+00692646         52                  PUSH EDX
+00692647         50                  PUSH EAX
+00692648         8B41 38             MOV EAX, DWORD PTR DS:[ECX+38]
+0069264B         FFD0                CALL EAX
+0069264D         83C4 10             ADD ESP, 10
+00692650         6A 02               PUSH 2
+00692652         FFD7                CALL EDI                                                        ; kernel32.Sleep
+
+00692670         3975 50             CMP DWORD PTR SS:[EBP+50], ESI
+00692673         90                  NOP
+00692674         90                  NOP
+00692675         90                  NOP
+00692676         90                  NOP
+00692677         90                  NOP
+00692678         90                  NOP
+
+
+RunWalkbuild=True
+GeoTestDuringBuild=False
+RunPostBuild=True
+Log data, item 35
+ Address=004C065B
+ Message=Access violation when reading [8B260D60]
+
+RunWalkBuild <<-- Pawn walks the map like a good idiot.
+GeoTestDuringBuild <<-- Tests geo being build against existing geodata \system\geodata and output useless text...
+RunPostBuild <<-- (?)
+
+wtf width= ... not working?...
+
+performed successful build (correct NWSE data, using): bBlockActors=True,
+bCollideActors=True, bProjTarget=True, bBlockPlayers=True, bBlockNonZeroExtent=True,
+bBlockZeroExtent=True, bCollideActors=True, bCollideWorld=True, bStatic=False
+
+it is possible to buildzone (geo) with only using the client (no connection to a server
+is required for this).  to enable this, in l2.ini is set
+
+IsL2NetLogin=False
+IsL2Console=False
+
+((i discover this first ironically :))
+
+pressing " ` " OR TAB! :D in game will display the Console.  Commands to the console do not use any
+/, // or /// prefix (see nwindow.dll for the reason).  not many packages loaded when not NetPlay/Console ...
+
+it reminds to be seen if building using different options will make a difference in
+the geo produced.
+
+i am playing with building as an npc, and it doesn't effect anything.
+
+follow up, building as npc or different pawn has no effect.  this is hardcoded in engine.dll, only changes there will make a
+difference.  building as ...  actually, fuck it - we can access the collision stuff via class APawn or game console, changing it via
+engine.dll not necessary...
+added note 10/10/17: I was wrong... MFighter seem to be average collision require for accurate geo, but I was experimenting with
+buildzone using NPC, and all races, hehe
+
+ct2.3 \ct2_1\system\engine.dll 05.17.09:
+00692E52             90                       NOP                 ; WinDrv.?Repaint@UWindowsViewport@@UAEXH@Z
+
+
+[1769,1669]2(-2664:0001)(-3128:1111)
+[x,y]layers(z:NSWE)(z:NSWE)
+
+engine.dll - where to patch for buildzone:
+
+2806F9-FE:	0F	90 <<-- 0027BCCC <<-- do not take this JNZ (NOP it)
+2B528F <-- Interlude
+00297886 <<-- Gracia
+CT2.2/CT2.3 - leave it...
+
+2C9E91-97: ActorNonZeroExtentLineCheck, the SEH chain, MOV DWORD PTR FS:[0], ESP <<-- NOP it.
+
+2CAC71-77: ?ActorLineCheck@FCollisionOctree@@UAEPAUFCheckResult@@AAVFMemStack@@VFVector@@11KKPAVAActor@@@Z:
+
+<<-- The SEH Chain again .. NOP it @ offset 00240741 (?ActorLineCheck@FCollisionOctree@@UAEPAUFCheckResult@@AAVFMemStack@@VFVector@@11KKPAVAActor@@@Z)
+
+<<-- JE at offset 001604DD change this to a JMP, we will try.. JNZ works.
+ct2.3 -> 104920ED         /EB 17                    JMP SHORT engine.10492106
+
+410161-62: JE 160513, Change to JNZ works.. not this change causes the screen to shake in repeat..
+459FB2 <<-- Interlude
+0017C961 <<-- Gracia
+ct2.3 -> 10492129         /0F84 BF000000            JE engine.104921EE
+
+41049C-A1: offset 0016098B: Changed JNZ to JE, works.
+0045A432 <<-- Interlude
+17CDDB <<-- Gracia
+ct2.3 -> 104925B5         /0F85AA000000            JNZ engine.10492665
+
+Continue with the rest tomorrow, 05/10/08: -->> 
+
+we are \SystemX\Engine.dll~
+
+411282: @ offset 1615C3 - JE to JNZ
+45AF6D <-- Interlude
+0017D9D0 <<-- Gracia
+
+4112A2:	@ offset 1615E7 - JE to JNZ
+45AF91 <<-- Interlude
+17D9F4 <<-- Gracia
+
+4112DB:	@ offset 161623 - JE to JNZ
+45AFCD <<-- Interlude
+0017DA30 <<-- Gracia
+
+41138C: @ offset 1616E4 - JE to JNZ
+45B0B7 <<-- Interlude
+0017DAF1 <<-- Gracia
+
+41141E:	@ offst 161776 - JE to JNZ
+0017DB7D <<-- Gracia
+<<-- 05/11/08:
+
+11.21.08 -->> ...
+
+Breakpoints
+//IsGameGuardShit -->>
+Address    Module     Active                     Disassembly                           Comment
+004B04DC   ADVAPI32   Disabled                   PUSH 90                               CryptAquireContextA
+0410CC9D   engine     Always                     CMP DWORD PTR DS:[EDI+4], 0           t
+0410D117   engine     Always                     CMP DWORD PTR DS:[EDI+4], 0           nt
+0410DD10   engine     Always                     JE SHORT engine.0410DD2F
+0410DD34   engine     Always                     JE SHORT engine.0410DD42
+0410DD70   engine     Always                     JE SHORT engine.0410DD8F
+0410DE31   engine     Always                     JE SHORT engine.0410DE50
+0410DEBD   engine     Always                     JE SHORT engine.0410DECB
+7D4D0F40   kernel32   Disabled                   MOV EDI, EDI
+7D4D1004   kernel32   Disabled                   MOV EDI, EDI
+7D4D1357   kernel32   Disabled                   MOV EDI, EDI
+7D4D8DF9   kernel32   Disabled                   MOV EAX, DWORD PTR FS:[18]            GetProcessHeap
+7D4D8E8F   kernel32   Disabled                   MOV EDI, EDI                          InitCriticalSection
+7D4D8F25   kernel32   Disabled                   RETN 14
+7D4E1D04   kernel32   Disabled                   MOV EDI, EDI                          GetLocalTime
+7D4E26F9   kernel32   Disabled                   MOV EDI, EDI                          OpenProcess
+7D503F46   kernel32   Disabled                   MOV EDI, EDI                          ExitProcess
+7D61CA0B   ntdll      Disabled                   MOV EAX, 16
+7D61CBD3   ntdll      Disabled                   MOV EAX, 29                           ZwTerminateProcess
+7D61EA28   ntdll      Disabled                   MOV ECX, DWORD PTR SS:[ESP+4]
+
+
+ZeroExtentsTraces: False
+Non ZeroExtentsTraces: False
+CollideActors: False
+...then your static mesh no longer recieves the benifit of full dynamic lighting, sayth UDN...
+
+to edit our buildzone actor -->> editactor class=MFighter1
+i set Collision to 0.0/0.0 - crash, no collision reference in critical error dialog, hehehe...
+
+0063B128--0025B128
+
+Nono, NonZeroExtentTraces -->> pawns (i.e. player models)
+ZeroExtentTraces -->> weapons fire, lights and coronas.
+
+-61448.000000 ,-59576.000000, -2045.998047
+Extent[9.000000 ,9.000000, 23.000000
+StaticMeshActor 18_16.StaticMeshActor638 Name=TP_WeddingHall_bottom01 End
+FOctreeNode::ActorNonZeroExtentLineCheck
+-61448.00,-59576.00, 15000.00
+
+Breakpoints
+Address    Module     Active                     Disassembly                           Comment
+0047C400   engine     Disabled                   MOV EAX, DWORD PTR DS:[7DB0A0]
+00490670   engine     Disabled                   FLDZ                                  ??0CGeoCellInfo@@QAE@XZ
+00490700   engine     Disabled                   MOV EAX, ECX
+00490834   engine     Disabled                   MOV DWORD PTR DS:[ESI], engine.??_7C  MOV DWORD PTR DS:[ESI], ??_7CGeoCellInfo@@6B@
+00490940   engine     Disabled                   FLD DWORD PTR SS:[ESP+C]              FindCell@CGeoZone
+00490970   engine     Disabled                   MOV EAX, DWORD PTR SS:[ESP+10]        AddCell@CGeoZoneInfo
+004909C0   engine     Disabled                   MOV EAX, DWORD PTR SS:[ESP+4]         4CGeoZoneInfo
+0053E600   engine     Disabled                   PUSH ESI                              <<-- =D
+0053E63A   engine     Disabled                   POP EDI
+0053E640   engine     Disabled                   PUSH ESI                              ??1CGeoCellInfo@@UAE@XZ
+0053E6E0   engine     Disabled                   PUSH -1                               AddCell
+0053F720   engine     Disabled                   FLD DWORD PTR SS:[ESP+C]              engine.?SetReachability@CGeoZoneInfo@@QAE_NVFVector@@0W4enum_direction@@H@Z
+005402B0   engine     Disabled                   PUSH EBP                              005402B0=engine.?buildWorldStructure@FWorldBuilder@@QAEHPAVULevel@@PAGPAVUViewport@@HH@Z
+00540BEB   engine     Disabled                   JE SHORT engine.00540BF8
+005416AB   engine     Disabled                   MOV EDX, DWORD PTR SS:[EBP+50]
+0054B774   engine     Disabled                   FLD DWORD PTR SS:[EBP+30]
+005796CA   engine     Disabled                   PUNPCKHBW MM7, MM7
+00579702   engine     Disabled                   POP FS
+0064E328   engine     Disabled                   CALL NEAR EAX
+00763370   engine     Disabled                   PUSH EBP
+000F51DC
+
+
+//c4 : 0099369C  007F9AE0  Engine.007F9AE0
+
+
+DS:[0088B838]=15000.00
+00120BA8        15000.00
+
+00B28644 engine.?GStatGraph@@3PAVFStatGraph>  0000            ADD BYTE PTR DS:[EAX], AL
+
+0053E600 engine.??0CGeoZoneInfo@@QAE@XZ              56              PUSH ESI 
+
+core.dll :
+
+iseditor: 10248144
+isclient: 10248154
+ISSERVER - WHERE IS EDITOR.DLL - FUCK!
+
+Search for differences
+
+840BB4
+//
+
+Can locate Engine.?getScout@FWorldBuilder@@AAEXXZ by searching for:
+
+Notes: C1 E1 0F 81 E9 01 80 09 00
+
+SHL ECX, 0F
+SUB ECX, 98001
+
+2806F9:	90	0F
+2806FA:	90	85
+2806FB:	90	BB
+2806FC:	90	00
+2806FD:	90	00
+2806FE:	90	00
+<<-- MOV EDX, DWORD PTR DS:core.?GIsEditor@@3HA
+<<-- CMP DWORD PTR DS:[EDX], 0
+<<-- Insert 6 NOP at addr 007143F2
+
+2C9E91:	90	64
+2C9E92:	90	89
+2C9E93:	90	25
+2C9E94:	90	00
+2C9E95:	90	00
+2C9E96:	90	00
+2C9E97:	90	00
+<<-- Insert 7 NOP, the original was  : MOV DWORD PTR FS:[0], ESP
+<<-- 00764C30
+
+00764C41    64:8925 00000000     MOV DWORD PTR FS:[0], ESP
+
+
+2CAC71:	90	64
+2CAC72:	90	89
+2CAC73:	90	25
+2CAC74:	90	00
+2CAC75:	90	00
+2CAC76:	90	00
+2CAC77:	90	00
+<<-- Locate second reference to: References in engine: engine.?ActorNonZeroExtentLineCheck@FOctreeNode@@QAEXPAVFCollisionOctree@@PBVFPlane@@@Z
+<<--Find routine start, again seven NOP: 83 EC 4C MOV DWORD PTR FS:[0], ESP
+<<-- addr: 00765841
+
+<<-- 40EDC9:	04	1C	<-- MFighter to FFighter // FDarlElf [00A562E6]
+<<-- Search text strings for "FFighter", or to make it easier, Go to addr: 008B09C0
+<<-- We change FFighter to MFighter... at addr: 00A56334... the purpose of this is unclear...
+.... oh, to mod collision, i see.  can do this lots of other ways tho....
+
+68 4C 63 A5 00
+
+68 E6 62 A5 00
+
+0A520ED <- LineageWarrior.FDarkElf (<3 Female Dark Elf ^_^)
+
+68 64 21 A5 00 <-- FFighter
+
+68 EC 20 A5 00
+
+68 4C 63 A5 00
+00A562DC                          46                               F
+
+
+<<-- addr: 008B09ED & 008B0A13 are the Push "FFighter" we need to change to "MFighter"
+<<--LineageWarrior.MFighter <<-- addr: 00A521A0
+<<-- MFighter addr: 0A56334
+
+410125:	EB	74
+<<-- Find references to ?getScout@FWorldBuilder, go to the second result.
+<<-- change JE to JMP at addr: 008B2052
+
+410161:	90	0F
+410162:	E9	84
+<<-- Search Binary String: 66 3D 5C 00 74 11 66 3D 2F 00 74 0B 66 3D 3A 00
+<<-- Go to addr: 008B208C - change the JE to JMP.
+
+41049C:	90	0F
+41049D:	90	85
+41049E:	90	07
+41049F:	90	03
+4104A0:	90	00
+4104A1:	90	00
+<<-- Go to addr: 008B2515 and set six NOP.
+
+411282:	EB	74
+<<-- addr 008B315F change JE to JMP
+
+4112A2:	EB	74
+<<-- addr 008B3183 change JE to JMP
+
+4112DB:	EB	74
+<<-- addr 008B31BF change JE to JMP
+
+41138C:	EB	74
+<<-- addr: 008B3280 change JE to JMP
+
+41141E:	EB	74
+<<-- addr 008B3318 change JE to JMP
+
+41221C:	90	0F
+41221D:	90	85
+41221E:	90	37
+41221F:	90	01
+412220:	90	00
+412221:	90	00
+<<-- %S_path.txt Search binary string for cellsize.
+Place seven NOP again on the JNZ at addr: 008B4138
+
+Buildzone_CT2_Part2.txt -->>
+
+0029787A - nop (00687886   /0F85 B9000000   JNZ engine.00687945 )
+
+0017C961 -> JNZ (0056CCA1   /0F84 BD000000   JE engine.0056CD64 )
+
+0017D11B -> JE (0056D11B   /0F85 8E020000   JNZ engine.0056D3AF )
+
+0017DD11 -> JNZ (0056DD10   /74 1D           JE SHORT engine.0056DD2F )
+
+0017DD34 -> JNZ (0056DD34   /74 0C           JE SHORT engine.0056DD42 )
+
+0017DD70 -> JNZ (0056DA30   /75 1D           JNZ SHORT engine.0056DA4F )
+
+0017DE31 -> JNZ ( 0056DE31   /74 1D           JE SHORT engine.0056DE50 )
+
+0017DEBD -> JNZ ( 0056DEBD   /74 0C           JE SHORT engine.0056DECB )
+
+BuildzoneWater.txt -->>
+
+OBJ LOAD FILE=..\Textures\FDarkElf.utx PACKAGE=FDarkElf
+
+grrr, god damnit - doesn't work.
+
+crash 'fixed' changed je at 000E0647 .. this may create subpar quality geo however...
+
+editactor name=StaticMeshActor962
+editdefault class=StaticMeshActor962
+History: FSweptBoxCollisionCheck::Check <- FSweptBoxCollisionCheck::Check
+<- UStaticMesh::LineCheck <- Owner=StaticMeshActor 20_22.StaticMeshActor962
+Name=grass010 End[x=16312 y=144342 z=-3006]
+Start[16312.000000 ,144350.000000, -3006.406250] Extent[9.000000 ,9.000000, 23.000000] <- FOctreeNode::ActorNonZeroExtentLineCheck <- 
+
+000EEA04
+00F62D8 = GL2TextCapture //set .data section to rwx and place 0x00000001 to enable logging of in game text....
+
+l2.exe dsetup.dll.DirectXSetupGetVersion is imported via ordinal, and requires us fixing it by hand.
+correction, this import is worthless -- besides i hijack it with wildcard...
+
+nwindow.dll has several imports by ordinal (oleaut32.dll, ole32.dll if memory serves me correct) - and it matters not..
+
+Visual C++ Runtime error bogus, just ret the stupid MSVC warning functions and look at the jxx that call this shit -- it lies.
+
+[*]
+[*]: BuildZone_CT2_Part2.txt
+[*]
+
+0029787A - nop (00687886   /0F85 B9000000   JNZ engine.00687945 )
+
+0017C961 -> JNZ (0056CCA1   /0F84 BD000000   JE engine.0056CD64 )
+
+0017D11B -> JE (0056D11B   /0F85 8E020000   JNZ engine.0056D3AF )
+
+0017DD11 -> JNZ (0056DD10   /74 1D           JE SHORT engine.0056DD2F )
+
+0017DD34 -> JNZ (0056DD34   /74 0C           JE SHORT engine.0056DD42 )
+
+0017DD70 -> JNZ (0056DA30   /75 1D           JNZ SHORT engine.0056DA4F )
+
+0017DE31 -> JNZ ( 0056DE31   /74 1D           JE SHORT engine.0056DE50 )
+
+0017DEBD -> JNZ ( 0056DEBD   /74 0C           JE SHORT engine.0056DECB )
+
+ct2.4
+
+2018C059                  /0F85 BF000000               JNZ Engine.2018C11E
+
+2018C4E5                  /0F85 AA000000               JNZ Engine.2018C595	(maybe wrong)
+
+
+[*]
+[*]: BuildPath.txt
+[*]
+
+For long time, I believe client can build something like pathnode too .. did brief experimentation... very brief.
+
+DevPath: Remove old reachspecs
+DevPath: Add reachspecs
+DevPath: Added reachspecs to PlayerStart0
+DevPath: Prune reachspecs
+Log: Prune paths from PlayerStart0
+DevPath: Pruned 0 reachspecs
+DevPath: All done
+DevPath: Remove old reachspecs
+DevPath: Add reachspecs
+DevPath: Added reachspecs to PlayerStart0
+DevPath: Prune reachspecs
+Log: Prune paths from PlayerStart0
+DevPath: Pruned 0 reachspecs
+DevPath: All done
+----------------------Starting From PlayerStart0
+WALK WITH COLLISION SIZE 30.000000 24.000000
+----------------------Anchor PlayerStart0
+
+...
+
+Found potential distant pair PlayerStart0 (-64.000000, 0.000000) and PathNode0 (-0.380005, -95.730003)
+Found potential distant pair PlayerStart0 (-64.000000, 0.000000) and PathNode1 (-5.300003, 106.699997)
+Added new path PathNode2 at -34.650002 53.349998
+Found potential distant pair PlayerStart0 (-64.000000, 0.000000) and PathNode2 (-34.650002, 53.349998)
+Found potential distant pair PathNode0 (-0.380005, -95.730003) and PlayerStart0 (-64.000000, 0.000000)
+Found potential distant pair PathNode0 (-0.380005, -95.730003) and PathNode1 (-5.300003, 106.699997)
+Try PlayerStart0 Total 202.489777 versus 128.122192 + 134.291245
+Try PathNode2 Total 202.489777 versus 155.564041 + 67.145622
+Found PathNode2 as intermediate
+Found potential distant pair PathNode0 (-0.380005, -95.730003) and PathNode2 (-34.650002, 53.349998)
+Try PlayerStart0 Total 155.564041 versus 128.122192 + 67.145622
+Added new path PathNode3 at -17.515003 -21.190002
+
+
+(15:59:29) DevPath: Remove old reachspecs
+(16:02:36) DevPath: Add reachspecs
+(16:03:04) DevPath: Added reachspecs to PlayerStart0
+(16:03:37) DevPath: Prune reachspecs
+(16:03:54) Log: Prune paths from PlayerStart0
+(16:04:01) DevPath: Pruned 0 reachspecs
+(16:38:41) DevPath: All done
+(16:39:14) DevPath: Remove old reachspecs
+(16:39:14) DevPath: Add reachspecs
+(16:39:14) DevPath: Added reachspecs to PlayerStart0
+(16:39:14) DevPath: Prune reachspecs
+(16:39:14) Log: Prune paths from PlayerStart0
+(16:39:14) DevPath: Pruned 0 reachspecs
+(16:39:52) DevPath: All done
+(16:39:57) Log: ----------------------Starting From PlayerStart0
+(16:39:57) Log: WALK WITH COLLISION SIZE 30.000000 24.000000
+(16:39:57) Log: ----------------------Anchor PlayerStart0
+(16:39:57) Log: didn't find new anchor
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: WALK WITH COLLISION SIZE 30.000000 24.000000
+(16:39:57) Log: ----------------------Anchor PlayerStart0
+(16:39:57) Log: didn't find new anchor
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: WALK WITH COLLISION SIZE 30.000000 24.000000
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: Total steps out of bounds
+(16:39:57) Log: Num steps 2000
+(16:39:57) Log: WALK WITH COLLISION SIZE 30.000000 24.000000
+(16:39:57) Log: ----------------------Anchor PlayerStart0
+(16:39:57) Log: didn't find new anchor
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: WALK WITH COLLISION SIZE 30.000000 24.000000
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: Total steps out of bounds
+(16:39:57) Log: Num steps 2000
+(16:39:57) Log: WALK WITH COLLISION SIZE 30.000000 24.000000
+(16:39:57) Log: ----------------------Anchor PlayerStart0
+(16:39:57) Log: didn't find new anchor
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: WALK WITH COLLISION SIZE 30.000000 24.000000
+(16:39:57) Log: ----------------------Anchor PlayerStart0
+(16:39:57) Log: didn't find new anchor
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: WALK WITH COLLISION SIZE 30.000000 24.000000
+(16:39:57) Log: ----------------------Anchor PlayerStart0
+(16:39:57) Log: didn't find new anchor
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: WALK WITH COLLISION SIZE 18.000000 24.000000
+(16:39:57) Log: ----------------------Anchor PlayerStart0
+(16:39:57) Log: didn't find new anchor
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: WALK WITH COLLISION SIZE 18.000000 24.000000
+(16:39:57) Log: ----------------------Anchor PlayerStart0
+(16:39:57) Log: didn't find new anchor
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: WALK WITH COLLISION SIZE 18.000000 24.000000
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: Total steps out of bounds
+(16:39:57) Log: Num steps 2000
+(16:39:57) Log: WALK WITH COLLISION SIZE 18.000000 24.000000
+(16:39:57) Log: ----------------------Anchor PlayerStart0
+(16:39:57) Log: didn't find new anchor
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: WALK WITH COLLISION SIZE 18.000000 24.000000
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: Total steps out of bounds
+(16:39:57) Log: Num steps 2000
+(16:39:57) Log: WALK WITH COLLISION SIZE 18.000000 24.000000
+(16:39:57) Log: Total steps out of bounds
+(16:39:57) Log: Num steps 2000
+(16:39:57) Log: WALK WITH COLLISION SIZE 18.000000 24.000000
+(16:39:57) Log: ----------------------Anchor PlayerStart0
+(16:39:57) Log: didn't find new anchor
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: WALK WITH COLLISION SIZE 18.000000 24.000000
+(16:39:57) Log: Total steps out of bounds
+(16:39:57) Log: Num steps 2000
+(16:39:57) Log: WALK WITH COLLISION SIZE 12.000000 24.000000
+(16:39:57) Log: ----------------------Anchor PlayerStart0
+(16:39:57) Log: didn't find new anchor
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: WALK WITH COLLISION SIZE 12.000000 24.000000
+(16:39:57) Log: ----------------------Anchor PlayerStart0
+(16:39:57) Log: didn't find new anchor
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: WALK WITH COLLISION SIZE 12.000000 24.000000
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: Total steps out of bounds
+(16:39:57) Log: Num steps 2000
+(16:39:57) Log: WALK WITH COLLISION SIZE 12.000000 24.000000
+(16:39:57) Log: ----------------------Anchor PlayerStart0
+(16:39:57) Log: didn't find new anchor
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: WALK WITH COLLISION SIZE 12.000000 24.000000
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: Total steps out of bounds
+(16:39:57) Log: Num steps 2000
+(16:39:57) Log: WALK WITH COLLISION SIZE 12.000000 24.000000
+(16:39:57) Log: Total steps out of bounds
+(16:39:57) Log: Num steps 2000
+(16:39:57) Log: WALK WITH COLLISION SIZE 12.000000 24.000000
+(16:39:57) Log: ----------------------Anchor PlayerStart0
+(16:39:57) Log: didn't find new anchor
+(16:39:57) Warning: SpawnActor failed because class PathNode has bStatic or bNoDelete
+(16:39:57) Log: Failed to add path!
+(16:39:57) Log: WALK WITH COLLISION SIZE 12.000000 24.000000
+(16:39:57) Log: Total steps out of bounds
+(16:39:57) Log: Num steps 2000
+(16:40:10) DevPath: Remove old reachspecs
+(16:40:10) DevPath: Add reachspecs
+(16:40:10) DevPath: Added reachspecs to PlayerStart0
+(16:40:10) DevPath: Prune reachspecs
+(16:40:10) Log: Prune paths from PlayerStart0
+(16:40:10) DevPath: Pruned 0 reachspecs
+(16:40:32) DevPath: All done
+(16:40:39) Log: Total paths build time 2500.091309 seconds
+
+
+
